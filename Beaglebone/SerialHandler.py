@@ -64,7 +64,7 @@ class SerialHandler:
 
     def sendRotation():
         encoded = cobs.encode(struct.pack("f", distance))
-        self.ser.write(r"\m" + encoded + b"\00")
+        self.ser.write(b"\r" + encoded + b"\00")
         
         dataBuffer = b""
         startTime = int(round(time.time() * 1000))
