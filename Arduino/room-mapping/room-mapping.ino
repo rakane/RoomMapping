@@ -49,13 +49,14 @@ void onPacketReceived(const uint8_t* buffer, size_t size) {
   }
 
 
+  Serial.println("---------------------------------------");
   if (currentOperation == 0) 
   {
     Serial.println("Current Operation: Gather Data");
     for (int i = 0; i < 4; i++) {
       incomingPacket.packet_data[i] = tempBuffer[i];
     }
-    Serial.print("Angle: ");
+    Serial.print("Angle to measure: ");
     Serial.println(incomingPacket.packet_float);
     myPacketSerial.send(incomingPacket.packet_data, 4);
   } 
@@ -85,9 +86,7 @@ void onPacketReceived(const uint8_t* buffer, size_t size) {
     sendPacket.packet_float = 1.0;
     myPacketSerial.send(sendPacket.packet_data, 4);
   }
-
-
-
+  Serial.println("---------------------------------------");
 }
 
 void printPacket(_packet packet) {
