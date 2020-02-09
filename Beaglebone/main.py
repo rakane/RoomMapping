@@ -1,7 +1,9 @@
 import time
 from SerialHandler import *
+from MapHandler import *
 
 serialHandler = SerialHandler()
+mapHandler = MapHandler()
 
 while True:
     for i in range(0, 361):
@@ -15,7 +17,6 @@ while True:
         else:
             print("Response Distance: " + str(distance))
         print("------------------------------")
-        time.sleep(5)
         
         # Movement command test
         print("------------------------------")
@@ -26,7 +27,6 @@ while True:
         else:
             print("Failed!")
         print("------------------------------")
-        time.sleep(5)
         
         # Rotation command test
         print("------------------------------")
@@ -37,4 +37,3 @@ while True:
         else:
             print("Failed!")
         print("------------------------------")
-        time.sleep(5)
