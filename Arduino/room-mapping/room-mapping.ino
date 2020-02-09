@@ -11,6 +11,9 @@ _packet myPacket;
 
 void onPacketReceived(const uint8_t* buffer, size_t size);
 
+int currentOperation = -1;
+
+
 void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
@@ -34,12 +37,56 @@ void onPacketReceived(const uint8_t* buffer, size_t size) {
   memcpy(tempBuffer, buffer, size);
   _packet incomingPacket;
 
-  for(int i = 0; i < 4; i++) {
-      incomingPacket.packet_data[i] = tempBuffer[i];
+  if (tempBuffer[0] == 100) {
+    currentOperation = 0;
+    return;
+  } else if (tempBuffer[0] == 109) {
+    currentOperation = 1;
+    return;
+  } else if (tempBuffer[0] == 114) {
+    currentOperation = 2;
+    return;
   }
-  
-  Serial.println(incomingPacket.packet_float);
-  myPacketSerial.send(incomingPacket.packet_data, 4);
+
+
+  if (currentOperation == 0) 
+  {
+    Serial.println("Current Operation: Gather Data");
+    for (int i = 0; i < 4; i++) {
+      incomingPacket.packet_data[i] = tempBuffer[i];
+    }
+    Serial.print("Angle: ");
+    Serial.println(incomingPacket.packet_float);
+    myPacketSerial.send(incomingPacket.packet_data, 4);
+  } 
+  else if (currentOperation == 1)
+  {
+    Serial.println("Current Operation: Move");
+    for (int i = 0; i < 4; i++) {
+      incomingPacket.packet_data[i] = tempBuffer[i];
+    }
+    Serial.print("Distance: ");
+    Serial.println(incomingPacket.packet_float);
+
+    _packet sendPacket;
+    sendPacket.packet_float = 1.0;
+    myPacketSerial.send(sendPacket.packet_data, 4);
+  } 
+  else if (currentOperation == 2) 
+  {
+    Serial.println("Current Operation: Rotate");
+    for (int i = 0; i < 4; i++) {
+      incomingPacket.packet_data[i] = tempBuffer[i];
+    }
+    Serial.print("Angle to Rotate: ");
+    Serial.println(incomingPacket.packet_float);
+
+    _packet sendPacket;
+    sendPacket.packet_float = 1.0;
+    myPacketSerial.send(sendPacket.packet_data, 4);
+  }
+
+
 
 }
 
