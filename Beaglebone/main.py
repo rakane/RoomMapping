@@ -22,11 +22,14 @@ while True:
             print("Success!")
         else:
             print("Failed!")
+        time.sleep(1)
         
         # Rotation command test
         print("Sending rotation...")
-        res = serialHandler.sendMovement(1.0)
+        res = serialHandler.sendRotation(3.0)
         if(res):
             print("Success!")
         else:
             print("Failed!")
+
+        time.sleep(5)

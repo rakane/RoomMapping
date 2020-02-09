@@ -14,8 +14,10 @@ class SerialHandler:
         print("Serial communication ready!")
 
     def getDistance(self, angle):
+        encodedCommand = cobs.encode(b"d")
+        self.ser.write(encodedCommand + b"\00")
         encoded = cobs.encode(struct.pack("f", angle))
-        self.ser.write(b"\d" + encoded + b"\00")
+        self.ser.write(encoded + b"\00")
          
 
         dataBuffer = b""
@@ -37,8 +39,11 @@ class SerialHandler:
         return -1
 
     def sendMovement(self, distance):
+        encodedCommand = cobs.encode(b"m")
+        self.ser.write(encodedCommand + b"\00")
+
         encoded = cobs.encode(struct.pack("f", distance))
-        self.ser.write(b"\m" + encoded + b"\00")
+        self.ser.write(encoded + b"\00")
         
         dataBuffer = b""
         startTime = int(round(time.time() * 1000))
@@ -62,10 +67,13 @@ class SerialHandler:
         return False
 
 
-    def sendRotation():
+    def sendRotation(self, distance):
+        encodedCommand = cobs.encode(b"r")
+        self.ser.write(encodedCommand + b"\00")
         encoded = cobs.encode(struct.pack("f", distance))
-        self.ser.write(b"\r" + encoded + b"\00")
-        
+        self.ser.write(encoded + b"\00")
+       
+
         dataBuffer = b""
         startTime = int(round(time.time() * 1000))
         currentTime = startTime
