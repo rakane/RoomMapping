@@ -17,7 +17,8 @@ while True:
         else:
             print("Response Distance: " + str(distance))
         print("------------------------------")
-        
+        time.sleep(3)
+
         # Movement command test
         print("------------------------------")
         print("Sending Movement...")
@@ -27,7 +28,8 @@ while True:
         else:
             print("Failed!")
         print("------------------------------")
-        
+        time.sleep(3)
+    
         # Rotation command test
         print("------------------------------")
         print("Sending rotation...")
@@ -37,3 +39,5 @@ while True:
         else:
             print("Failed!")
         print("------------------------------")
+        time.sleep(3)
+
