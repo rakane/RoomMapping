@@ -6,7 +6,7 @@ serialHandler = SerialHandler()
 mapHandler = MapHandler()
 
 while True:
-    for i in range(0, 361):
+    for i in range(1, 359, 20):
 
         # Measurement command test
         print("------------------------------")
