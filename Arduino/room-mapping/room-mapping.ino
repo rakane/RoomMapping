@@ -1,6 +1,9 @@
 #include "PacketSerial.h"
 #include <Servo.h>
 
+#define DIR_CW 0
+#define DIR_ACW 1
+
 // Communication
 void onPacketReceived(const uint8_t* buffer, size_t size);
 
@@ -14,35 +17,52 @@ typedef union _packet {
 int currentOperation = -1;
 
 // Servo Control
-Servo sensorServo;
+Servo myservo;
 
-uint8_t sensorServoPin = 9;
-uint8_t feedbackPin = A0;
+uint16_t fullyCW = 1000; //ACW meaning anti-clockwise (counter clockwise)
+uint16_t fullyACW = 2000;
 
-float tHigh = 0;
-float tLow = 0;
-int tCycle = 0;
-float dc = 0;
-float angle = 0; //Measured angle from feedback
-float dcMin = 2.9; //From Parallax spec sheet
-float dcMax = 97.1; //From Parallax spec sheet
-float Kp = .4; //Proportional Gain, higher values for faster response, higher values contribute to overshoot.
-float Ki = .2; //Integral Gain, higher values to converge faster to zero error, higher values produce oscillations. Higher values are more unstable near a target_angle = 0.
-float iLimit = 5; //Arbitrary Anti-wind-up
-float Kd = 1; //Derivative Gain, higher values dampen oscillations around target_angle. Higher values produce more holding state jitter. May need filter for error noise.
-float prev_error = 0;
-float prev_pError = 0;
-float error = 0;
-float pError = 0;
-float iError = 0;
+uint8_t servoControlPin = 9;
+uint8_t servoFeedbackPin = 5;
+
+int feedbackLow = 33;
+int feedbackHigh = 1050;
+float commandPos = 180.f;
+float errorMargin = .6f;
+int microsecondRange = 1000;
+int microsecondMin = 1000;
+int microsecondCenter = 1500;
+int microsecondMax = 2000;
+int minpulse = 45;
+float currentPos = 0.f;
+int pulseinVal = 0;
+
+//Meta Values
+int totalRange = feedbackHigh - feedbackLow;
+float pulsePerDeg = totalRange/360.f;
+
+int servoMoveHoming(float _commandPos);
+float feedback2Deg(float _inputPulse);
+int servoMoveCW(float _commandPos);
+int servoMoveACW(float _commandPos);
+
 
 
 void setup() {
-  pinMode(A0, INPUT);
+  pinMode(servoFeedbackPin, INPUT);
+  myservo.attach(servoControlPin);  // attaches the servo on pin 9 to the servo object
+  pulseinVal = pulseIn(servoFeedbackPin, HIGH);
+  currentPos = feedback2Deg(pulseinVal);
   Serial.begin(9600);
   Serial2.begin(9600);
   myPacketSerial.setStream(&Serial2);
   myPacketSerial.setPacketHandler(&onPacketReceived);
+  
+// Stop on 89 - 95
+// 88 - X CW
+// 96 - X CCW  
+//  sensorServo.attach(sensorServoPin);
+//  sensorServo.write(96);
 }
 
 void loop() {
@@ -82,7 +102,7 @@ void onPacketReceived(const uint8_t* buffer, size_t size) {
     }
     Serial.print("Angle to measure: ");
     Serial.println(incomingPacket.packet_float);
-    uint8_t status = moveToAngle((int) incomingPacket.packet_float);
+    servoMoveHoming((int) incomingPacket.packet_float);
     myPacketSerial.send(incomingPacket.packet_data, 4);
   }
   else if (currentOperation == 1)
@@ -114,75 +134,99 @@ void onPacketReceived(const uint8_t* buffer, size_t size) {
   Serial.println("---------------------------------------");
 }
 
+float feedback2Deg(float _inputPulse){
+  float outDeg =  (_inputPulse-feedbackLow)/pulsePerDeg;
+  return outDeg;
+}
 
-uint8_t moveToAngle(int targetAngle) {
-  sensorServo.attach(sensorServoPin);
-  Serial.println(targetAngle);
+int servoMoveHoming(float _commandPos){
 
-  while (1) //From Parallax spec sheet
-  {
-    tHigh = pulseIn(feedbackPin, HIGH);
-    tLow = pulseIn(feedbackPin, LOW);
-    tCycle = tHigh + tLow;
-    if ( tCycle > 1000 && tCycle < 1200)
-    {
-      break; //valid tCycle;
+  //Current Position
+  pulseinVal = pulseIn(servoFeedbackPin, HIGH);
+  currentPos = feedback2Deg(pulseinVal);
+
+  while(abs(_commandPos - currentPos) > errorMargin){
+    //Determine which direction to rotate
+
+    //Create copies of our actual values
+    float limitedCommandPos = _commandPos;
+    float limitedCurrentPos = currentPos;
+
+    //Give them floors and cielings for the sake of repeatibility
+    if(limitedCommandPos < 0.f){
+      limitedCommandPos = 0.f;
+    } else if(limitedCommandPos > 360.f) {
+      limitedCommandPos = 360.f;
     }
+
+    if(limitedCurrentPos < 0.f){
+      limitedCurrentPos = 0.f;
+    } else if(limitedCurrentPos > 360.f) {
+      limitedCurrentPos = 360.f;
+    }
+
+    //Determine if the shortest path is going to be clockwise or counter clockwise
+    if(limitedCommandPos > limitedCurrentPos){
+      if((limitedCommandPos - limitedCurrentPos) > 180.f){
+        servoMove(_commandPos, DIR_ACW);
+      } else {
+        servoMove(_commandPos, DIR_CW);
+      }
+    } else {
+      if((limitedCurrentPos - limitedCommandPos) < 180.f){
+        servoMove(_commandPos, DIR_ACW);
+      } else {
+        servoMove(_commandPos, DIR_CW);
+      }
+    }
+
+    pulseinVal = pulseIn(servoFeedbackPin, HIGH);
+    currentPos = feedback2Deg(pulseinVal);
   }
+  
+  
+  return 0;
+}
 
-  dc = (100 * tHigh) / tCycle; //From Parallax spec sheet, you are trying to determine the percentage of the HIGH in the pulse
+int servoMove(float _commandPos, int _dir){
+  do{
 
-  angle = ((dc - dcMin) * 360) / (dcMax - dcMin + 1); //From Parallax spec sheet
+    //Get the current position of the servo horn
+    pulseinVal = pulseIn(servoFeedbackPin, HIGH);
+    currentPos = feedback2Deg(pulseinVal);
 
-  //Keep measured angles within bounds
-  if (angle < 0)
-  {
-    angle = 0;
-  }
-  else if (angle > 359)
-  {
-    angle = 359;
-  }
+    //Formulate a magnitude based upon how farway the horn is away from its desired position
+    float absMag = (abs(currentPos - _commandPos) / 360.f) * (microsecondRange/2.f);
 
-  if (targetAngle < 0)
-  {
-    targetAngle = 360 + targetAngle; //handles negative target_angles;
-  }
+    //Let's set the speed based on how big our magnitude is. The resulting effect should be that if there is
+    //a lot of distance the servo should move fast, but smaller distances it will go slower. This code puts
+    //a floor and a cieling on the servo speed.
+    int force = 0;
+    if(DIR_CW == _dir){
 
-  error = targetAngle - angle;
+      force = microsecondCenter - absMag;
+      if(force < microsecondMin){
+        force = microsecondMin;
+      } else if(force > microsecondCenter - minpulse){
+        force = microsecondCenter - minpulse;
+      }
 
-  if (error > 180)
-  {
-    error = error - 360; //tells it to rotate in the other direction because it is a smaller angle that way.
-  }
-  if (error < -180)
-  {
-    error = 360 - error - 360; //tells it to rotate in the other direction because it is a smaller angle that way.
-  }
+    } else {
 
-  // PID controller stuff, Adjust values of Kp, Ki, and Kd above to tune your system
-  float pError = Kp * error;
-  float iError = Ki * (error + prev_error);
+      force = microsecondCenter + absMag;
+      if(force > microsecondMax){
+        force = microsecondMax;
+      } else if(force < microsecondCenter + minpulse){
+        force = microsecondCenter + minpulse;
+      }
+    }
 
-  if  (iError > iLimit)
-  {
-    iError = iLimit;
-  }
-  if (iError <  -iLimit)
-  {
-    iError = -iLimit;
-  }
+    //We move the servo
+    myservo.writeMicroseconds(force);
+    
+  }while(abs(currentPos - _commandPos) > errorMargin);
 
-  prev_error = error;
-  float dError = Kd * (pError - prev_pError);
-  prev_pError = pError;
-
-  error = error / 2; //max 180 error will have max 90 offset value
-
-  int val = 90 - (Kp * error) - iError - dError; // 93 is the middle of my servo's "no motion" dead-band
-
-  sensorServo.write(val); // Move the servo
-  delay(500);
-  sensorServo.detach();
-  return 1;
+  myservo.writeMicroseconds(microsecondCenter);
+  
+  return 0;
 }
