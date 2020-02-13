@@ -122,7 +122,7 @@ void onPacketReceived(const uint8_t* buffer, size_t size) {
 
     // if status = -1, then an error occured and data wasn't retrieved
     if (status == -1) {
-      myPacketSerial.send(errorPacket.packet_data, 4);
+          myPacketSerial.send(errorPacket.packet_data, 4);
     } else {
       myPacketSerial.send(incomingPacket.packet_data, 4);
     }
@@ -199,7 +199,6 @@ int servoMoveHoming(float _commandPos) {
     }
     
     if (limitedCommandPos < limitedCurrentPos) {
-      Serial.println("CCW");
       int status = servoMove(_commandPos, DIR_CCW);
 
       // Status = -1 means an error occured
@@ -207,7 +206,6 @@ int servoMoveHoming(float _commandPos) {
         return -1;
       }
     } else {
-      Serial.println("CW");
       int status = servoMove(_commandPos, DIR_CW);
 
       // Status = -1 means an error occured
