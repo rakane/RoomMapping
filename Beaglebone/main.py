@@ -10,16 +10,18 @@ while True:
     while i < 360:
         # Measurement command test
         print("------------------------------")
-        print("Requesting measurement...")
+        print("Requesting measurement at angle of", end=' ')
+        print(i, end='')
+        print("...")
         distance = serialHandler.getDistance(i)
         if(distance < 0):
             if(distance == -1):
                 print("Error! Angle measurement invalid")
-                distance = serialHandler.getDistance(0);
+                serialHandler.resetSensorMotor()
                 i -= 10
             else:
                 print("Error, no response from Arduino")
-                serialHandler.resetSensorMotor();
+                exit(1)
                 i -= 10
         else:
             print("Response Distance: " + str(distance))
