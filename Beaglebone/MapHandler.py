@@ -2,6 +2,8 @@
 class MapHandler:
     def __init__(self):
         self.roomMap = []
+        for i in range(0, 36):
+            self.roomMap.append(-1000)
         
     def initialMap(self, data):
         self.roomMap = data
@@ -50,3 +52,12 @@ class MapHandler:
                 self.mapRoom[i] = temp[i]
     
         return 1
+
+    def print(self):
+        print(" [ ", end='')
+        for i in range(0, 35):
+            print(self.roomMap[i], end=' ')
+
+        print(self.roomMap[35],end=' ')
+        print("]")
+           

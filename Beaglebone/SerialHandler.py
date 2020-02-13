@@ -23,7 +23,7 @@ class SerialHandler:
         dataBuffer = b""
         startTime = int(round(time.time() * 1000))
         currentTime = startTime
-        while (currentTime - startTime) < 1000:
+        while (currentTime - startTime) < 3000:
             if self.ser.inWaiting() > 0:
                 val = self.ser.read(1)
                 if val == b'\x00':
@@ -36,7 +36,33 @@ class SerialHandler:
 
             currentTime = int(round(time.time() * 1000))
    
-        return -1
+        return -2
+
+    def resetSensorMotor(self):
+        encodedCommand = cobs.encode(b"d")
+        self.ser.write(encodedCommand + b"\00")
+        encoded = cobs.encode(struct.pack("f", 0.0))
+        self.ser.write(encoded + b"\00")
+         
+
+        dataBuffer = b""
+        startTime = int(round(time.time() * 1000))
+        currentTime = startTime
+        while (currentTime - startTime) < 3000:
+            if self.ser.inWaiting() > 0:
+                val = self.ser.read(1)
+                if val == b'\x00':
+                    data = cobs.decode(dataBuffer)
+                    unpackedData = struct.unpack('f', data)[0]
+                    return unpackedData
+                    dataBuffer = b""
+                else:
+                    dataBuffer += val
+
+            currentTime = int(round(time.time() * 1000))
+   
+        return -2
+
 
     def sendMovement(self, distance):
         encodedCommand = cobs.encode(b"m")
