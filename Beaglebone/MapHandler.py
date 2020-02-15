@@ -1,3 +1,9 @@
+import matplotlib
+
+matplotlib.use('Agg')
+
+import matplotlib.pyplot as plt
+import math
 
 class MapHandler:
     def __init__(self):
@@ -7,6 +13,9 @@ class MapHandler:
         
     def initialMap(self, data):
         self.roomMap = data
+    
+    def getMap(self):
+        return self.roomMap
 
     def updateValue(self, index, val):
         self.roomMap[index] = val
@@ -56,8 +65,29 @@ class MapHandler:
     def print(self):
         print(" [ ", end='')
         for i in range(0, 35):
-            print(self.roomMap[i], end=' ')
+            print(self.roomMap[i], end=', ')
 
         print(self.roomMap[35],end=' ')
         print("]")
-           
+
+    def showPlot(self):
+        theta = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110,
+                120, 130, 140, 150, 160, 170, 180, 190, 200,
+                210, 220, 230, 240, 250, 260, 270, 280, 290,
+                300, 310, 320, 330, 340, 350 ]
+        
+        distance = self.roomMap
+
+        # Convert degrees to radians
+        for i in range(0, 36):
+            theta[i] = theta[i] * (math.pi / 180)
+
+        # Complete circle by making a 360 point equal to 0
+        # Simply for visualization
+        theta.append(theta[0])
+        distance.append(distance[0])
+
+        plt.polar(theta, distance)
+        plt.show()
+
+

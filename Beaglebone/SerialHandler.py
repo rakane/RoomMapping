@@ -48,7 +48,7 @@ class SerialHandler:
         dataBuffer = b""
         startTime = int(round(time.time() * 1000))
         currentTime = startTime
-        while (currentTime - startTime) < 3000:
+        while (currentTime - startTime) < 10000:
             if self.ser.inWaiting() > 0:
                 val = self.ser.read(1)
                 if val == b'\x00':

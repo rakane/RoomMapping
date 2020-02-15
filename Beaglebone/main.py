@@ -1,9 +1,14 @@
 import time
 from SerialHandler import *
 from MapHandler import *
+from HTTPHandler import *
+
+plotHost = '192.168.1.11'
+plotPort = '5000'
 
 serialHandler = SerialHandler()
 mapHandler = MapHandler()
+httpHandler = HTTPHandler(plotHost, plotPort)
 
 while True:
     i = 0;
@@ -25,7 +30,10 @@ while True:
                 i -= 10
         else:
             print("Response Distance: " + str(distance))
-            mapHandler.updateValue( i // 10, distance)
+            if(distance > 200):
+                mapHandler.updateValue( i // 10, -1000)
+            else:
+                mapHandler.updateValue( i // 10, distance)
         print("------------------------------")
         time.sleep(0.2)
         i += 10
@@ -51,4 +59,6 @@ while True:
         #    print("Failed!")
         #print("------------------------------")
         #time.sleep(3)
-    mapHandler.print()
+    # mapHandler.print()
+    httpHandler.sendMap(mapHandler.getMap()) 
+
