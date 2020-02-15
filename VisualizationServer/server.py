@@ -20,6 +20,20 @@ def addPlot():
     # Convert degrees to radians
     for i in range(0, 36):
         theta[i] = theta[i] * (math.pi / 180)
+    
+    # Remove any point at -1000 value
+    # This means no value was detected in range, and is ingored for graph
+    # Add indices in reverse order to delete from back of list first and no mess with length
+    indicesToRemove = []
+    for i in range(0,36):
+        if(distances[i] < 0):
+            indicesToRemove.insert(0, i)
+    
+    numRemoved = 0
+    for i in range(0, len(indicesToRemove)):
+        distances.remove(i - numRemoved)
+        theta.remove(i - numRemoved)
+        numRemoved += 1
 
     # Complete circle by making a 360 point equal to 0
     # Simply for visualization
