@@ -15,8 +15,9 @@ typedef union _packet {
 _packet errorPacket;
 
 int currentOperation = -1;
+// End Communication
 
-// Servo Control
+// Sensor Servo
 Servo myservo;
 
 uint16_t fullyCW = 1000;    // Counter-Clockwise
@@ -37,9 +38,14 @@ int minpulse = 45;
 float currentPos = 0.f;
 int pulseinVal = 0;
 
-//Meta Values
 int totalRange = feedbackHigh - feedbackLow;
 float pulsePerDeg = totalRange / 360.f;
+// End Sensor Servo
+
+// Ultrasonic Sensor
+uint8_t pingPin = 7;
+uint8_t echoPin = 6;
+// End Ultrasonic Sensor
 
 // Functions
 void onPacketReceived(const uint8_t* buffer, size_t size);
@@ -47,13 +53,16 @@ int servoMoveHoming(float _commandPos);
 float feedback2Deg(float _inputPulse);
 int servoMoveCW(float _commandPos);
 int servoMoveACW(float _commandPos);
-
-
+float getDistance();
 
 void setup() {
+  // Ultrasonic Sensor Setup
+  pinMode(pingPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
   // Servo setup
   pinMode(servoFeedbackPin, INPUT);
-  myservo.attach(servoControlPin);  
+  myservo.attach(servoControlPin);
 
   // Servo initial position
   pulseinVal = pulseIn(servoFeedbackPin, HIGH);
@@ -122,9 +131,11 @@ void onPacketReceived(const uint8_t* buffer, size_t size) {
 
     // if status = -1, then an error occured and data wasn't retrieved
     if (status == -1) {
-          myPacketSerial.send(errorPacket.packet_data, 4);
+      myPacketSerial.send(errorPacket.packet_data, 4);
     } else {
-      myPacketSerial.send(incomingPacket.packet_data, 4);
+      _packet responsePacket;
+      responsePacket.packet_float = getDistance();
+      myPacketSerial.send(responsePacket.packet_data, 4);
     }
   }
   else if (currentOperation == 1)
@@ -135,7 +146,7 @@ void onPacketReceived(const uint8_t* buffer, size_t size) {
     for (int i = 0; i < 4; i++) {
       incomingPacket.packet_data[i] = tempBuffer[i];
     }
-    
+
     Serial.print("Distance: ");
     Serial.println(incomingPacket.packet_float);
 
@@ -152,7 +163,7 @@ void onPacketReceived(const uint8_t* buffer, size_t size) {
     for (int i = 0; i < 4; i++) {
       incomingPacket.packet_data[i] = tempBuffer[i];
     }
-    
+
     Serial.print("Angle to Rotate: ");
     Serial.println(incomingPacket.packet_float);
 
@@ -197,7 +208,7 @@ int servoMoveHoming(float _commandPos) {
     } else if (limitedCurrentPos > 360.f) {
       limitedCurrentPos = 0.f;
     }
-    
+
     if (limitedCommandPos < limitedCurrentPos) {
       int status = servoMove(_commandPos, DIR_CCW);
 
@@ -243,7 +254,7 @@ int servoMove(float _commandPos, int _dir) {
   // Timeout control variables
   unsigned long startTime = millis();
   unsigned long currTime = millis();
-  
+
   do {
     // Calculate current Servo position
     pulseinVal = pulseIn(servoFeedbackPin, HIGH);
@@ -279,7 +290,7 @@ int servoMove(float _commandPos, int _dir) {
 
     // We move the servo
     myservo.writeMicroseconds(force);
-    
+
     currTime = millis();
 
     // If reducing the error below the acceptable level takes longer
@@ -295,4 +306,66 @@ int servoMove(float _commandPos, int _dir) {
   myservo.writeMicroseconds(microsecondCenter);
 
   return 0;
+}
+
+
+float getDistance() {
+  long cms[10] = { -1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000 };
+  long duration;
+  long sum = 0;
+  float average;
+  float cm;
+
+  // Get 10 data samples
+  for (int i = 0; i < 10; i++) {
+    digitalWrite(pingPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(pingPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(pingPin, LOW);
+    duration = pulseIn(echoPin, HIGH);
+    cms[i] = duration / 29.0 / 2.0;
+    sum += cms[i];
+  }
+
+  average = sum / 5.0;
+
+  // If any data came back as out of range, retry
+  for (int i = 0; i < 10; i++) {
+    if (cms[i] > 200) {
+      digitalWrite(pingPin, LOW);
+      delayMicroseconds(2);
+      digitalWrite(pingPin, HIGH);
+      delayMicroseconds(10);
+      digitalWrite(pingPin, LOW);
+      duration = pulseIn(echoPin, HIGH);
+      cms[i] = duration / 29.0 / 2.0;
+    }
+  }
+
+  // Remove outliers that are higher than average (better to undershoot and not collide)
+  // Outlier threshold is arbitrary until testing
+  for(int i = 0; i < 10; i++) {
+    if(cms[i] - average > 50) {
+      cms[i] = -1000;
+    }
+  }
+
+  // Recalculate average
+  int count = 0;
+  sum = 0.0;
+  for(int i = 0; i < 10; i++) {
+    if(cms[i] != -1000) {
+      sum += cms[i];
+      count++;
+    }
+  }
+
+  float finalAvg = sum / count;
+
+  Serial.print("Average: ");
+  Serial.print(finalAvg);
+  Serial.print("cm");
+  Serial.println();
+  return finalAvg;
 }
