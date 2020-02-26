@@ -12,36 +12,30 @@ def addPlot():
     distances = data['map']
     print(distances)
 
-    theta = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 
-            120, 130, 140, 150, 160, 170, 180, 190, 200, 
-            210, 220, 230, 240, 250, 260, 270, 280, 290, 
-            300, 310, 320, 330, 340, 350 ]
+    theta = [180, 170, 160, 150, 140, 130, 120, 
+            110, 100, 90, 80, 70, 60, 50, 40, 30, 
+            20, 10, 0 ]
 
     # Convert degrees to radians
-    for i in range(0, 36):
+    for i in range(0, 19):
         theta[i] = theta[i] * (math.pi / 180)
-    
-    # Remove any point at -1000 value
-    # This means no value was detected in range, and is ingored for graph
-    # Add indices in reverse order to delete from back of list first and no mess with length
-    indicesToRemove = []
-    for i in range(0,36):
-        if(distances[i] < 0):
-            indicesToRemove.insert(0, i)
-    
-    numRemoved = 0
-    for i in range(0, len(indicesToRemove)):
-        distances.remove(i - numRemoved)
-        theta.remove(i - numRemoved)
-        numRemoved += 1
 
-    # Complete circle by making a 360 point equal to 0
-    # Simply for visualization
-    theta.append(theta[0])
-    distances.append(distances[0])
-    
+    unwantedTheta = [];
+    unwantedDistances = {-1000}
+
+    for i in range(0, 19):
+        if distances[i] == -1000:
+            unwantedTheta.append(theta[i])
+
+    newThetas = [ele for ele in theta if ele not in unwantedTheta]
+    newDistances = [ele for ele in distances if ele not in unwantedDistances]
+
+    newThetas.append(newThetas[0])
+    newDistances.append(newDistances[0])
+  
+
     plt.clf()
-    plt.polar(theta, distances)
+    plt.polar(newThetas, newDistances)
     plt.savefig('./static/map.png')
     
     return json.dumps({'status': 1})

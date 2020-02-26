@@ -60,6 +60,7 @@ void setup() {
   pinMode(pingPin, OUTPUT);
   pinMode(echoPin, INPUT);
 
+
   // Servo setup
   pinMode(servoFeedbackPin, INPUT);
   myservo.attach(servoControlPin);
@@ -70,8 +71,8 @@ void setup() {
 
   // Communication setup
   Serial.begin(9600);
-  Serial2.begin(9600);
-  myPacketSerial.setStream(&Serial2);
+//  Serial2.begin(9600);
+  myPacketSerial.setStream(&Serial);
   myPacketSerial.setPacketHandler(&onPacketReceived);
   errorPacket.packet_float = -1;
 
@@ -89,12 +90,12 @@ void loop() {
 
   // Check for buffer overflow
   if (myPacketSerial.overflow()) {
-    Serial.println("Buffer Overflow!");
+//    Serial.println("Buffer Overflow!");
   }
 }
 
 
-// Handles communication with Beaglbone
+// Handles communication with Beaglebone
 void onPacketReceived(const uint8_t* buffer, size_t size) {
   uint8_t tempBuffer[size];
   memcpy(tempBuffer, buffer, size);
@@ -114,17 +115,13 @@ void onPacketReceived(const uint8_t* buffer, size_t size) {
 
 
   // Perform operation with data sent after previous command
-  Serial.println("---------------------------------------");
   if (currentOperation == 0)
   {
-    Serial.println("Current Operation: Gather Data");
 
     // Convert uint8_t array to float
     for (int i = 0; i < 4; i++) {
       incomingPacket.packet_data[i] = tempBuffer[i];
-    }
-    Serial.print("Angle to measure: ");
-    Serial.println(incomingPacket.packet_float);
+    }  
 
     // Rotate sensor servo motor
     int status = servoMoveHoming((int) incomingPacket.packet_float);
@@ -140,15 +137,10 @@ void onPacketReceived(const uint8_t* buffer, size_t size) {
   }
   else if (currentOperation == 1)
   {
-    Serial.println("Current Operation: Move");
-
     // Convert uint8_t array to float
     for (int i = 0; i < 4; i++) {
       incomingPacket.packet_data[i] = tempBuffer[i];
     }
-
-    Serial.print("Distance: ");
-    Serial.println(incomingPacket.packet_float);
 
     // Send response packet
     _packet sendPacket;
@@ -157,22 +149,16 @@ void onPacketReceived(const uint8_t* buffer, size_t size) {
   }
   else if (currentOperation == 2)
   {
-    Serial.println("Current Operation: Rotate");
-
     // Convert uint8_t array to float
     for (int i = 0; i < 4; i++) {
       incomingPacket.packet_data[i] = tempBuffer[i];
     }
-
-    Serial.print("Angle to Rotate: ");
-    Serial.println(incomingPacket.packet_float);
 
     // Send response packet
     _packet sendPacket;
     sendPacket.packet_float = 1.0;
     myPacketSerial.send(sendPacket.packet_data, 4);
   }
-  Serial.println("---------------------------------------");
 }
 
 // Calculates Servo motor angle from feedback
@@ -296,8 +282,8 @@ int servoMove(float _commandPos, int _dir) {
     // If reducing the error below the acceptable level takes longer
     // than 2 seconds, break and return -1 indicating an error occured
     if (currTime - startTime > 2000) {
-      Serial.print("Final Error: ");
-      Serial.println(abs(currentPos - _commandPos));
+//      Serial.print("Final Error: ");
+//      Serial.println(abs(currentPos - _commandPos));
       return -1;
     }
   } while (abs(currentPos - _commandPos) > errorMargin);
@@ -310,6 +296,7 @@ int servoMove(float _commandPos, int _dir) {
 
 
 float getDistance() {
+//  return 100.0;
   long cms[10] = { -1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000 };
   long duration;
   long sum = 0;
@@ -362,10 +349,10 @@ float getDistance() {
   }
 
   float finalAvg = sum / count;
-
-  Serial.print("Average: ");
-  Serial.print(finalAvg);
-  Serial.print("cm");
-  Serial.println();
+//
+//  Serial.print("Average: ");
+//  Serial.print(finalAvg);
+//  Serial.print("cm");
+//  Serial.println();
   return finalAvg;
 }
