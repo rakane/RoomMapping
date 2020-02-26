@@ -12,6 +12,5 @@ class HTTPHandler:
         payload = {'map': data}
         serialData = json.dumps(payload)
         x = requests.post(self.url, data=serialData)
-        res = json.loads(x.text) 
-        print(res)
-
+        # res = json.loads(x.text) 
+        #print(res)

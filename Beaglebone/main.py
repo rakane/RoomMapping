@@ -3,16 +3,18 @@ from SerialHandler import *
 from MapHandler import *
 from HTTPHandler import *
 
-plotHost = '192.168.1.11'
+plotHost = '192.168.1.129'
 plotPort = '5000'
 
 serialHandler = SerialHandler()
 mapHandler = MapHandler()
 httpHandler = HTTPHandler(plotHost, plotPort)
 
+# Center Distance 140 + or - 2
+
 while True:
-    i = 0;
-    while i < 360:
+    i = 50;
+    while i < 231:
         # Measurement command test
         print("------------------------------")
         print("Requesting measurement at angle of", end=' ')

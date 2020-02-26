@@ -8,7 +8,7 @@ import math
 class MapHandler:
     def __init__(self):
         self.roomMap = []
-        for i in range(0, 36):
+        for i in range(0, 19):
             self.roomMap.append(-1000)
         
     def initialMap(self, data):
@@ -18,7 +18,8 @@ class MapHandler:
         return self.roomMap
 
     def updateValue(self, index, val):
-        self.roomMap[index] = val
+        
+        self.roomMap[index - 5] = val
 
     def updateSection(self, startIndex, stopIndex, data, resolution):
         dataIndex = 0
