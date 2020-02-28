@@ -26,7 +26,7 @@ void setup() {
 
   // Attach interrupt pins to IR sensors
   attachInterrupt(digitalPinToInterrupt(leftIRSensor), avoidLeft, LOW);
-  //attachInterrupt(digitalPinToInterrupt(rightIRSensor), avoidRight, LOW);
+  attachInterrupt(digitalPinToInterrupt(rightIRSensor), avoidRight, LOW);
 
   if (DEV_MODE == 0) {
     forwards(LEFT_MOTOR);
@@ -44,8 +44,13 @@ void loop() {
     if (obstacleLeft == 1) {
       backwards(LEFT_MOTOR);
       backwards(RIGHT_MOTOR);
-      delay(100);
-      rotateRight(800);
+      delay(300);
+      rotateRight(300);
+    } else if (obstacleRight == 1) {
+      backwards(LEFT_MOTOR);
+      backwards(RIGHT_MOTOR);
+      delay(300);
+      rotateLeft(300);
     } else {
       forwards(LEFT_MOTOR);
       forwards(RIGHT_MOTOR);
@@ -81,10 +86,10 @@ void off() {
 }
 
 void rotateLeft(int angle) {
-  digitalWrite(motorLForward, HIGH);
-  digitalWrite(motorRForward, LOW);
-  digitalWrite(motorLBackward, LOW);
-  digitalWrite(motorRBackward, HIGH);
+  digitalWrite(motorLForward, LOW);
+  digitalWrite(motorRForward, HIGH);
+  digitalWrite(motorLBackward, HIGH);
+  digitalWrite(motorRBackward, LOW);
   // This delay will control angle of movement until gyroscope implemented
   delay(angle);
   //  Serial.println("Returned to forwards");
@@ -92,10 +97,10 @@ void rotateLeft(int angle) {
 }
 
 void rotateRight(int angle) {
-  digitalWrite(motorLForward, LOW);
-  digitalWrite(motorRForward, HIGH);
-  digitalWrite(motorLBackward, HIGH);
-  digitalWrite(motorRBackward, LOW);
+  digitalWrite(motorLForward, HIGH);
+  digitalWrite(motorRForward, LOW);
+  digitalWrite(motorLBackward, LOW);
+  digitalWrite(motorRBackward, HIGH);
   // This delay will control angle of movement until gyroscope implemented
   delay(angle);
   //  Serial.println("Returned to forwards");
