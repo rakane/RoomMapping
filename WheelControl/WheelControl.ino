@@ -1,6 +1,6 @@
 #define LEFT_MOTOR 1
 #define RIGHT_MOTOR 2
-#define DEV_MODE 1
+#define DEV_MODE 0
 
 int motorLForward = 11;
 int motorLBackward = 12;
@@ -26,7 +26,7 @@ void setup() {
 
   // Attach interrupt pins to IR sensors
   attachInterrupt(digitalPinToInterrupt(leftIRSensor), avoidLeft, LOW);
-  attachInterrupt(digitalPinToInterrupt(rightIRSensor), avoidRight, LOW);
+  //attachInterrupt(digitalPinToInterrupt(rightIRSensor), avoidRight, LOW);
 
   if (DEV_MODE == 0) {
     forwards(LEFT_MOTOR);
@@ -42,9 +42,10 @@ void loop() {
     // Helpful so car doesnt drive off desk!!!
   } else {
     if (obstacleLeft == 1) {
+      backwards(LEFT_MOTOR);
+      backwards(RIGHT_MOTOR);
+      delay(100);
       rotateRight(800);
-    } else if (obstacleRight == 1) {
-      rotateLeft(800);
     } else {
       forwards(LEFT_MOTOR);
       forwards(RIGHT_MOTOR);
